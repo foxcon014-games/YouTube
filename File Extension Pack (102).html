@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+		<base href="https://cdn.jsdelivr.net/gh/foxcon014-games/fnf-mods@main/pokepasta-perdition/">
+	<meta charset="utf-8">
+	
+	<title>Game 24878</title>
+	
+	<meta id="viewport" name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	
+	
+	<link rel="shortcut icon" type="image/png" href="./favicon.png">
+	
+	
+	<script type="text/javascript" src="./pokepasta.js"></script>
+	<script>
+var VX_EQ_GAINS=[3,5,3,1,2,3,2,3,4,2];
+var VX_VOL=1.15;
+(function(){
+  var FREQ=[31,63,125,250,500,1000,2000,4000,8000,16000];
+  var OAC=window.AudioContext||window.webkitAudioContext;
+  var ctxs=[];
+  function PAC(o){
+    var ctx=o?new OAC(o):new OAC();
+    var mg=ctx.createGain();mg.gain.value=VX_VOL;
+    var fl=FREQ.map(function(f,i){
+      var n=ctx.createBiquadFilter();n.type="peaking";
+      n.frequency.value=f;n.Q.value=1.4;n.gain.value=VX_EQ_GAINS[i]||0;return n;
+    });
+    for(var i=0;i<fl.length-1;i++)fl[i].connect(fl[i+1]);
+    fl[fl.length-1].connect(mg);mg.connect(ctx.destination);
+    Object.defineProperty(ctx,"destination",{get:function(){return fl[0];}});
+    ctxs.push(ctx);window.__vxCtx=ctxs;return ctx;
+  }
+  PAC.prototype=OAC.prototype;
+  window.AudioContext=PAC;
+  if(window.webkitAudioContext)window.webkitAudioContext=PAC;
+})();
+	</script>
+	<script>
+		window.addEventListener ("touchmove", function (event) { event.preventDefault (); }, { capture: false, passive: false });
+		if (typeof window.devicePixelRatio != 'undefined' && window.devicePixelRatio > 2) {
+			var meta = document.getElementById ("viewport");
+			meta.setAttribute ('content', 'width=device-width, initial-scale=' + (2 / window.devicePixelRatio) + ', user-scalable=no');
+		}
+	</script>
+	
+	<style>
+		html,body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+		#openfl-content { background: #000000; width: 100%; height: 100%; }
+		@font-face {
+			font-family: 'Pixel Arial 11 Bold';
+			src: url('assets/fonts/pixel.eot?#iefix') format('embedded-opentype'),
+			url('assets/fonts/pixel.woff') format('woff'),
+			url('assets/fonts/pixel.otf') format('truetype');
+			font-weight: normal;
+			font-style: normal;
+		}
+		@font-face {
+			font-family: 'VCR OSD Mono';
+			src: url('assets/fonts/vcr.eot?#iefix') format('embedded-opentype'),
+			url('assets/fonts/vcr.woff') format('woff'),
+			url('assets/fonts/vcr.ttf') format('truetype'),
+			url('assets/fonts/vcr.svg#VCR%20OSD%20Mono') format('svg');
+			font-weight: normal;
+			font-style: normal;
+		}
+		@font-face {
+			font-family: 'Nokia Cellphone FC Small';
+			src: url('flixel/fonts/nokiafc22.eot?#iefix') format('embedded-opentype'),
+			url('flixel/fonts/nokiafc22.woff') format('woff'),
+			url('flixel/fonts/nokiafc22.ttf') format('truetype'),
+			url('flixel/fonts/nokiafc22.svg#Nokia%20Cellphone%20FC%20Small') format('svg');
+			font-weight: normal;
+			font-style: normal;
+		}
+		@font-face {
+			font-family: 'Monsterrat';
+			src: url('flixel/fonts/monsterrat.eot?#iefix') format('embedded-opentype'),
+			url('flixel/fonts/monsterrat.woff') format('woff'),
+			url('flixel/fonts/monsterrat.ttf') format('truetype'),
+			url('flixel/fonts/monsterrat.svg#Monsterrat') format('svg');
+			font-weight: normal;
+			font-style: normal;
+		}
+
+	</style>
+	
+</head>
+<body>
+	
+	<noscript>This webpage makes extensive use of JavaScript. Please enable JavaScript in your web browser to view this page.</noscript>
+	
+	<div id="openfl-content"></div>
+	
+	<script type="text/javascript">
+		lime.embed ("PsychEngine", "openfl-content", 1280, 720, { parameters: {} });
+	</script>
+
+	<!-- You can find the sources of the game on the website gamebanana.com -->
+<script>(function () {
+
+    // Hardcoded color value for the pure white glow effect
+    var whiteColor = '#00ff00';
+
+    function buildGlow(c) {
+        return '0 0 4px '+c+',0 0 10px '+c+',0 0 20px '+c+',0 0 6px '+c+',0 0 14px '+c+',0 0 28px '+c;
+    }
+
+    var originalTitle   = document.title;
+    var origFaviconEl   = document.querySelector("link[rel~='icon']");
+    var origFaviconHref = origFaviconEl ? origFaviconEl.href : null;
+    var favicon         = origFaviconEl;
+    if (!favicon) { favicon = document.createElement('link'); favicon.rel = 'icon'; document.head.appendChild(favicon); }
+
+    var blocked     = false;
+    var overlay     = null;
+    var textEl      = null;
+    var lastState   = null;
+
+    // Strict input event blocking to prevent clicking, scrolling, or typing anywhere
+    function blockInput(e) { e.stopImmediatePropagation(); e.preventDefault(); }
+    function addBlockers() {
+        if (blocked) return; blocked = true;
+        ['keydown','keyup','keypress','mousedown','mouseup','mousemove','click','touchstart','wheel'].forEach(function(ev) {
+            document.addEventListener(ev, blockInput, true);
+        });
+    }
+    function removeBlockers() {
+        if (!blocked) return; blocked = false;
+        ['keydown','keyup','keypress','mousedown','mouseup','mousemove','click','touchstart','wheel'].forEach(function(ev) {
+            document.removeEventListener(ev, blockInput, true);
+        });
+    }
+
+    function buildOverlay() {
+        if (overlay) return;
+        overlay = document.createElement('div');
+        overlay.id = '__vxAccessOverlay';
+        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#000;display:none;align-items:center;justify-content:center;z-index:2147483647;visibility:visible';
+        
+        textEl = document.createElement('div');
+        textEl.textContent = 'Access Denied';
+        textEl.style.cssText = 'color:'+whiteColor+';font-size:48px;font-weight:bold;font-family:VT323;text-shadow:'+buildGlow(whiteColor)+';user-select:none;pointer-events:none';
+        
+        overlay.appendChild(textEl);
+        document.body.appendChild(overlay);
+        if (lastState === 'Denied') overlay.style.display = 'flex';
+    }
+
+    function applyDenied() {
+        document.title = 'Access Denied';
+        favicon.href   = 'data:,';
+        addBlockers(); // Locks down interactions entirely
+        if (overlay) overlay.style.display = 'flex';
+    }
+
+    function applyGranted() {
+        document.title = originalTitle;
+        origFaviconHref ? (favicon.href = origFaviconHref) : (favicon.parentNode && favicon.parentNode.removeChild(favicon));
+        removeBlockers(); // Restores input controls
+        if (overlay) overlay.style.display = 'none';
+    }
+
+    function check() {
+        // Updated to explicitly look for "true" as the valid override string
+        var current = localStorage.getItem('Access') === 'true' ? 'Granted' : 'Denied';
+        if (current === lastState) return;
+        lastState = current;
+        current === 'Granted' ? applyGranted() : applyDenied();
+    }
+
+    check();
+
+    document.addEventListener('DOMContentLoaded', function () {
+        buildOverlay();
+        if (lastState === 'Denied' && overlay) overlay.style.display = 'flex';
+        setInterval(check, 500);
+    });
+
+    window.addEventListener('storage', function(e) {
+        if (e.key === 'Access') check();
+    });
+
+})();</script>	
+
+</body>
+</html>
