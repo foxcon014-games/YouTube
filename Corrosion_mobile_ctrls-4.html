@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Psych Engine</title>
+	<base href="https://cdn.jsdelivr.net/gh/foxcon014-games/fnf-mods@main/shucks-demo/">
+	<meta id="viewport" name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+	<meta name="apple-mobile-web-app-capable" content="yes">
+
+	<style>
+		* {
+			box-sizing: border-box;
+		}
+
+		html, body {
+			margin: 0;
+			padding: 0;
+			width: 100vw;
+			height: 100vh;
+			overflow: hidden;
+			background-color: #000000;
+		}
+
+		#openfl-content {
+			background: #000000;
+			width: 100vw;
+			height: 100vh;
+			position: absolute;
+			top: 0;
+			left: 0;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+
+		canvas {
+			max-width: 100% !important;
+			max-height: 100% !important;
+			object-fit: contain !important;
+			display: block !important;
+			position: absolute !important;
+			top: 50% !important;
+			left: 50% !important;
+			right: auto !important;
+			bottom: auto !important;
+			margin: 0 !important;
+			transform: translate(-50%, -50%) !important;
+		}
+
+		.btn {
+			background: linear-gradient(180deg, rgba(60, 60, 70, 0.85), rgba(20, 20, 25, 0.85));
+			border: 2px solid rgba(255, 255, 255, 0.35);
+			border-radius: 12px;
+			color: white;
+			font-family: sans-serif;
+			font-weight: bold;
+			letter-spacing: 0.3px;
+			user-select: none;
+			-webkit-user-select: none;
+			touch-action: manipulation;
+			cursor: pointer;
+			box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+			transition: background 0.12s ease, border-color 0.12s ease, transform 0.08s ease, box-shadow 0.12s ease;
+		}
+
+		.btn:hover {
+			border-color: rgba(255, 255, 255, 0.6);
+			box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+		}
+
+		.btn:active,
+		.btn.active {
+			background: linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(200, 200, 200, 0.35));
+			border-color: rgba(255, 255, 255, 0.85);
+			color: #111;
+			transform: scale(0.96);
+			box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+		}
+
+		.top-bar {
+			position: absolute;
+			top: 10px;
+			left: 0;
+			width: 100%;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			gap: 6px;
+			z-index: 10000;
+			pointer-events: auto;
+			transition: opacity 0.15s ease, transform 0.15s ease;
+			padding: 4px 60px;
+			padding-top: calc(4px + env(safe-area-inset-top, 0px));
+		}
+
+		.top-bar .btn {
+			padding: 8px 13px;
+			font-size: 12px;
+		}
+
+		.top-bar-group {
+			display: flex;
+			align-items: center;
+			gap: 6px;
+			flex-wrap: wrap;
+			justify-content: center;
+			width: 100%;
+		}
+
+		.top-bar .key-btn {
+			padding: 8px 10px;
+			min-width: 30px;
+			text-align: center;
+		}
+
+		.hidden-ui {
+			opacity: 0 !important;
+			pointer-events: none !important;
+			transform: translateY(-20px);
+		}
+
+		.toggle-btn {
+			position: absolute;
+			left: 10px;
+			top: 10px;
+			width: 36px;
+			height: 36px;
+			border-radius: 50%;
+			font-size: 16px;
+			z-index: 10001;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+
+		/* Quick corner controls (top-right) - shown only when the top menu bar is closed */
+		.corner-quick-group {
+			position: absolute;
+			top: 10px;
+			right: 10px;
+			z-index: 10001;
+			display: flex;
+			flex-direction: column;
+			gap: 6px;
+			transition: opacity 0.15s ease, transform 0.15s ease;
+		}
+
+		.corner-quick-btn {
+			width: 64px;
+			padding: 8px 0;
+			font-size: 12px;
+			text-align: center;
+		}
+
+		/* Base FULL Mode: 4 Full-Screen Columns */
+		.touch-overlay {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			display: grid;
+			grid-template-columns: repeat(4, 1fr);
+			z-index: 9999;
+			pointer-events: auto;
+			transition: opacity 0.2s ease;
+		}
+
+		/* NOTES Mode Layout */
+		.touch-overlay.strikeline-mode {
+			top: auto;
+			bottom: 20px;
+			height: 140px;
+			left: 50%;
+			transform: translateX(-50%);
+			width: 600px;
+			max-width: 90vw;
+			display: flex;
+			justify-content: space-between;
+			pointer-events: none;
+		}
+
+		.touch-overlay.hidden-arrows {
+			display: none !important;
+			pointer-events: none !important;
+		}
+
+		.touch-zone {
+			height: 100%;
+			width: 100%;
+			display: flex;
+			align-items: flex-end;
+			justify-content: center;
+			padding-bottom: 30px;
+			background: rgba(255, 255, 255, 0.0);
+			border-right: 1px dashed rgba(255, 255, 255, 0.08);
+			user-select: none;
+			-webkit-user-select: none;
+			touch-action: none;
+			pointer-events: auto;
+			position: relative;
+		}
+
+		.strikeline-mode .touch-zone {
+			width: 23%;
+			height: 100%;
+			padding-bottom: 0;
+			align-items: center;
+			border: 1px dashed rgba(255, 255, 255, 0.35);
+			border-radius: 8px;
+			touch-action: none;
+		}
+
+		.strikeline-mode.editing .touch-zone {
+			border: 2px dashed #00e5ff;
+			background: rgba(0, 229, 255, 0.15);
+			cursor: grab;
+		}
+
+		.strikeline-mode.editing .touch-zone.selected-target {
+			border: 2px solid #ff0055 !important;
+			background: rgba(255, 0, 85, 0.3) !important;
+		}
+
+		.touch-zone:last-child {
+			border-right: none;
+		}
+
+		.arrow-icon {
+			font-size: 48px;
+			font-family: sans-serif;
+			font-weight: bold;
+			color: rgba(255, 255, 255, 0.35);
+			pointer-events: none;
+			transition: transform 0.05s ease, color 0.05s ease;
+		}
+
+		.strikeline-mode .arrow-icon {
+			font-size: 32px;
+		}
+
+		.touch-zone.active {
+			background: rgba(255, 255, 255, 0.12);
+		}
+
+		.touch-zone.active .arrow-icon {
+			color: rgba(255, 255, 255, 0.9);
+			transform: scale(1.25);
+		}
+
+		/* Editor Panel UI */
+		.editor-panel {
+			position: absolute;
+			bottom: 10px;
+			left: 50%;
+			transform: translateX(-50%);
+			background: rgba(0, 0, 0, 0.85);
+			border: 2px solid #00e5ff;
+			border-radius: 12px;
+			padding: 8px 12px;
+			z-index: 10002;
+			display: flex;
+			flex-direction: column;
+			gap: 6px;
+			align-items: center;
+			color: white;
+			font-family: sans-serif;
+			font-size: 11px;
+		}
+
+		.editor-panel.hidden {
+			display: none;
+		}
+
+		.editor-row {
+			display: flex;
+			gap: 8px;
+			align-items: center;
+			flex-wrap: wrap;
+			justify-content: center;
+		}
+
+		.editor-title {
+			color: #00e5ff;
+			font-weight: bold;
+		}
+
+		.target-btn {
+			padding: 4px 8px;
+			font-size: 11px;
+		}
+
+		.target-btn.selected {
+			background: #ff0055;
+			border-color: #ff0055;
+		}
+
+		.slider-group {
+			display: flex;
+			align-items: center;
+			gap: 4px;
+		}
+
+		.slider-group input {
+			width: 80px;
+		}
+
+		.slider-group select {
+			background: rgba(0, 0, 0, 0.6);
+			color: white;
+			border: 1px solid rgba(255, 255, 255, 0.4);
+			border-radius: 6px;
+			padding: 3px 6px;
+			font-size: 11px;
+		}
+
+		.custom-key-btn {
+			position: absolute;
+			right: 24px;
+			bottom: 170px;
+			width: 80px;
+			height: 40px;
+			font-size: 12px;
+			text-align: center;
+			z-index: 9998;
+			touch-action: none;
+		}
+
+		.custom-key-btn.hidden {
+			display: none;
+		}
+
+		.custom-key-btn.move-mode {
+			outline: 3px dashed #00e5ff;
+			outline-offset: 3px;
+		}
+
+		.editor-panel.custom-btn-editor {
+			bottom: 200px;
+		}
+
+		/* Device Selection Prompt */
+		#device-select {
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background: rgba(0, 0, 0, 0.92);
+			z-index: 20000;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			gap: 22px;
+			font-family: sans-serif;
+			color: white;
+		}
+
+		#device-select.hidden {
+			display: none;
+		}
+
+		#device-select h2 {
+			margin: 0;
+			font-size: 18px;
+			font-weight: bold;
+			letter-spacing: 0.5px;
+			text-align: center;
+			padding: 0 20px;
+		}
+
+		.device-choices {
+			display: flex;
+			gap: 16px;
+		}
+
+		.device-btn {
+			padding: 16px 28px;
+			font-size: 14px;
+			border-radius: 14px;
+		}
+
+		/* Fullscreen Gate (Mobile only): blurred blocker shown until fullscreen is entered */
+		#fullscreen-gate {
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background: rgba(50, 50, 50, 0.55);
+			backdrop-filter: blur(8px);
+			-webkit-backdrop-filter: blur(8px);
+			z-index: 15000;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-family: sans-serif;
+		}
+
+		#fullscreen-gate.hidden {
+			display: none;
+		}
+
+		.fullscreen-gate-btn {
+			padding: 18px 28px;
+			font-size: 15px;
+			border-radius: 14px;
+		}
+	</style>
+</head>
+<body>
+
+	<div id="openfl-content"></div>
+
+	<!-- Device Selection Prompt -->
+	<div id="device-select">
+		<h2>Are you playing on Desktop or Mobile?</h2>
+		<div class="device-choices">
+			<button class="btn device-btn" onclick="chooseDevice('desktop')">DESKTOP</button>
+			<button class="btn device-btn" onclick="chooseDevice('mobile')">MOBILE</button>
+		</div>
+	</div>
+
+	<!-- Fullscreen Gate (Mobile only): blocks play until fullscreen is entered -->
+	<div id="fullscreen-gate" class="hidden">
+		<button class="btn fullscreen-gate-btn" onclick="toggleFullscreen()">Enter Fullscreen To Play</button>
+	</div>
+
+	<!-- Mobile Controls Wrapper (hidden until a device is chosen; stays hidden entirely on Desktop) -->
+	<div id="mobile-controls-wrap" style="display: none;">
+
+	<!-- Main Top Bar -->
+	<div class="top-bar" id="top-bar">
+		<div class="top-bar-group">
+			<button class="btn" onclick="toggleFullscreen()">Exit</button>
+			<button class="btn" id="hide-arrows-btn" onclick="toggleArrows()">HIDE ARROWS</button>
+			<button class="btn" id="hitbox-size-btn" onclick="toggleHitboxSize()">HITBOX: FULL</button>
+			<button class="btn key-btn" id="key-0-btn">0</button>
+			<button class="btn key-btn" id="key-minus-btn">-</button>
+			<button class="btn key-btn" id="key-plus-btn">+</button>
+			<button class="btn key-btn" id="key-7-btn">7</button>
+			<button class="btn key-btn" id="key-8-btn">8</button>
+			<button class="btn" id="add-custom-btn-toggle" onclick="toggleCustomButtonFeature()">Add Button</button>
+			<button class="btn hidden-ui" id="edit-layout-btn" onclick="toggleEditor()">EDIT LAYOUT</button>
+		</div>
+	</div>
+
+	<!-- Toggle (☰) Button on Top-Left -->
+	<button class="btn toggle-btn hidden-ui" id="toggle-ui-btn" onclick="toggleTopMenu()">☰</button>
+
+	<!-- Quick corner controls (top-right) - always visible, regardless of whether the top menu bar is open -->
+	<div class="corner-quick-group" id="corner-quick-group">
+		<button class="btn corner-quick-btn" id="quick-enter-btn">ENTER</button>
+		<button class="btn corner-quick-btn" id="quick-esc-btn">ESC</button>
+		<button class="btn corner-quick-btn" id="quick-ctrl-btn">CTRL</button>
+	</div>
+
+	<!-- Custom Programmable Button (added via "Add Button") -->
+	<button class="btn custom-key-btn hidden" id="custom-key-btn">SPACE</button>
+
+	<!-- Touch Overlay -->
+	<div class="touch-overlay" id="touch-overlay">
+		<div class="touch-zone" id="zone-ArrowLeft" data-key="ArrowLeft"><span class="arrow-icon">←</span></div>
+		<div class="touch-zone" id="zone-ArrowDown" data-key="ArrowDown"><span class="arrow-icon">↓</span></div>
+		<div class="touch-zone" id="zone-ArrowUp" data-key="ArrowUp"><span class="arrow-icon">↑</span></div>
+		<div class="touch-zone" id="zone-ArrowRight" data-key="ArrowRight"><span class="arrow-icon">→</span></div>
+	</div>
+
+	<!-- Editor UI Window -->
+	<div class="editor-panel hidden" id="editor-panel">
+		<span class="editor-title">DRAG & SIZE EDITOR</span>
+		<div class="editor-row">
+			<button class="btn target-btn selected" onclick="setEditTarget('ALL')">DRAG ALL</button>
+			<button class="btn target-btn" onclick="setEditTarget('ArrowLeft')">←</button>
+			<button class="btn target-btn" onclick="setEditTarget('ArrowDown')">↓</button>
+			<button class="btn target-btn" onclick="setEditTarget('ArrowUp')">↑</button>
+			<button class="btn target-btn" onclick="setEditTarget('ArrowRight')">→</button>
+		</div>
+		<div class="editor-row">
+			<div class="slider-group">
+				<label>GAP:</label>
+				<input type="range" id="gap-slider" min="0" max="40" value="10" oninput="updateSizing()">
+			</div>
+			<div class="slider-group">
+				<label>HEIGHT:</label>
+				<input type="range" id="height-slider" min="60" max="260" value="140" oninput="updateSizing()">
+			</div>
+			<div class="slider-group">
+				<label>WIDTH:</label>
+				<input type="range" id="width-slider" min="40" max="150" value="130" oninput="updateSizing()">
+			</div>
+		</div>
+		<div class="editor-row">
+			<button class="btn" style="background: #00c853; border-color: #00c853;" onclick="saveHitboxSettings()">SAVE</button>
+			<button class="btn" style="background: #d50000; border-color: #d50000;" onclick="resetHitboxSettings()">RESET</button>
+		</div>
+	</div>
+
+	<!-- Custom Button Editor -->
+	<div class="editor-panel custom-btn-editor hidden" id="custom-btn-editor">
+		<span class="editor-title">CUSTOM BUTTON</span>
+		<div class="editor-row">
+			<button class="btn target-btn" id="custom-move-toggle" onclick="toggleCustomButtonMove()">MOVE</button>
+			<div class="slider-group">
+				<label>KEY:</label>
+				<select id="custom-key-select" onchange="updateCustomButtonKey()">
+					<option value="Space">SPACE</option>
+					<option value="Backspace">BACKSPACE</option>
+					<option value="Tab">TAB</option>
+					<option value="Shift">SHIFT</option>
+				</select>
+			</div>
+		</div>
+		<div class="editor-row">
+			<div class="slider-group">
+				<label>HEIGHT:</label>
+				<input type="range" id="custom-height-slider" min="30" max="220" value="40" oninput="updateCustomButtonSizing()">
+			</div>
+			<div class="slider-group">
+				<label>WIDTH:</label>
+				<input type="range" id="custom-width-slider" min="40" max="220" value="80" oninput="updateCustomButtonSizing()">
+			</div>
+		</div>
+		<div class="editor-row">
+			<button class="btn" style="background: #00c853; border-color: #00c853;" onclick="saveCustomButtonSettings()">SAVE</button>
+			<button class="btn" style="background: #d50000; border-color: #d50000;" onclick="resetCustomButtonSettings()">RESET</button>
+		</div>
+	</div>
+
+	</div> <!-- /#mobile-controls-wrap -->
+
+	<!-- Engine Script -->
+	<script id="haxe:openfl" src="PsychEngine.js"></script>
+
+	<!-- Embed Init -->
+	<script type="text/javascript">
+		window.addEventListener('load', function() {
+			if (typeof lime !== 'undefined') {
+				lime.embed("PsychEngine", "openfl-content", 1280, 720, { parameters: {} });
+			}
+		});
+	</script>
+
+	<script>
+		let deviceMode = null;
+		const activeKeys = new Set();
+		let menuVisibleInFullscreen = false;
+		let arrowsVisible = true;
+		let strikelineHitboxMode = false;
+		let isEditing = false;
+		let editTarget = 'ALL';
+
+		let layoutSettings = {
+			offsets: {
+				'ArrowLeft': { x: 0, y: 0 },
+				'ArrowDown': { x: 0, y: 0 },
+				'ArrowUp': { x: 0, y: 0 },
+				'ArrowRight': { x: 0, y: 0 }
+			},
+			gap: 10,
+			height: 140,
+			width: 130
+		};
+
+		function loadSavedOffsets() {
+			const saved = localStorage.getItem('fnf_hitbox_layout');
+			if (saved) {
+				try {
+					layoutSettings = JSON.parse(saved);
+				} catch(e) {}
+			}
+			document.getElementById('gap-slider').value = layoutSettings.gap;
+			document.getElementById('height-slider').value = layoutSettings.height;
+			document.getElementById('width-slider').value = layoutSettings.width;
+		}
+
+		function applyOffsets() {
+			if (!strikelineHitboxMode) return;
+
+			Object.keys(layoutSettings.offsets).forEach(key => {
+				const zone = document.getElementById(`zone-${key}`);
+				if (zone) {
+					zone.style.transform = `translate(${layoutSettings.offsets[key].x}px, ${layoutSettings.offsets[key].y}px)`;
+					zone.style.height = `${layoutSettings.height}px`;
+					zone.style.width = `${layoutSettings.width}px`;
+				}
+			});
+
+			overlay.style.gap = `${layoutSettings.gap}px`;
+			overlay.style.height = `${layoutSettings.height}px`;
+		}
+
+		function resetFullHitboxes() {
+			zones.forEach(z => {
+				z.style.transform = '';
+				z.style.height = '';
+				z.style.width = '';
+			});
+			overlay.style.gap = '';
+			overlay.style.height = '';
+		}
+
+		function updateSizing() {
+			if (!strikelineHitboxMode) return;
+			layoutSettings.gap = parseInt(document.getElementById('gap-slider').value);
+			layoutSettings.height = parseInt(document.getElementById('height-slider').value);
+			layoutSettings.width = parseInt(document.getElementById('width-slider').value);
+			applyOffsets();
+		}
+
+		function sendKeyEvent(code, type) {
+			const keyMap = {
+				'ArrowLeft': 37, 'ArrowUp': 38, 'ArrowRight': 39, 'ArrowDown': 40,
+				'Enter': 13, 'Escape': 27, 'ControlLeft': 17,
+				'0': 48, '-': 189, '+': 187, '7': 55, '8': 56,
+				'Space': 32, 'Backspace': 8, 'Tab': 9, 'Shift': 16
+			};
+
+			if (type === 'keydown') {
+				if (activeKeys.has(code)) return;
+				activeKeys.add(code);
+			} else if (type === 'keyup') {
+				activeKeys.delete(code);
+			}
+
+			const event = new KeyboardEvent(type, {
+				bubbles: true,
+				cancelable: true,
+				code: code,
+				key: code,
+				keyCode: keyMap[code] || 0,
+				which: keyMap[code] || 0
+			});
+
+			window.dispatchEvent(event);
+		}
+
+		// Touch & Drag Handling Engine
+		const overlay = document.getElementById('touch-overlay');
+		const zones = Array.from(document.querySelectorAll('.touch-zone'));
+		let dragging = false;
+		let dragStart = { x: 0, y: 0 };
+		let initialOffsets = {};
+
+		function handleTouches(e) {
+			if (!arrowsVisible) return;
+
+			if (isEditing && strikelineHitboxMode) {
+				if (e.type === 'touchstart') {
+					dragging = true;
+					dragStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+					initialOffsets = JSON.parse(JSON.stringify(layoutSettings.offsets));
+				} else if (e.type === 'touchmove' && dragging) {
+					e.preventDefault();
+					const dx = e.touches[0].clientX - dragStart.x;
+					const dy = e.touches[0].clientY - dragStart.y;
+
+					if (editTarget === 'ALL') {
+						Object.keys(layoutSettings.offsets).forEach(key => {
+							layoutSettings.offsets[key].x = initialOffsets[key].x + dx;
+							layoutSettings.offsets[key].y = initialOffsets[key].y + dy;
+						});
+					} else {
+						layoutSettings.offsets[editTarget].x = initialOffsets[editTarget].x + dx;
+						layoutSettings.offsets[editTarget].y = initialOffsets[editTarget].y + dy;
+					}
+					applyOffsets();
+				} else if (e.type === 'touchend' || e.type === 'touchcancel') {
+					dragging = false;
+				}
+				return;
+			}
+
+			// In-Game Touch Handling
+			e.preventDefault();
+			const currentTouches = new Set();
+
+			for (let i = 0; i < e.touches.length; i++) {
+				const touch = e.touches[i];
+				const element = document.elementFromPoint(touch.clientX, touch.clientY);
+				const zone = element ? element.closest('.touch-zone') : null;
+
+				if (zone) {
+					const key = zone.getAttribute('data-key');
+					currentTouches.add(key);
+				}
+			}
+
+			zones.forEach(zone => {
+				const key = zone.getAttribute('data-key');
+				if (currentTouches.has(key)) {
+					if (!zone.classList.contains('active')) {
+						zone.classList.add('active');
+						sendKeyEvent(key, 'keydown');
+					}
+				} else {
+					if (zone.classList.contains('active')) {
+						zone.classList.remove('active');
+						sendKeyEvent(key, 'keyup');
+					}
+				}
+			});
+		}
+
+		overlay.addEventListener('touchstart', handleTouches, { passive: false });
+		overlay.addEventListener('touchmove', handleTouches, { passive: false });
+		overlay.addEventListener('touchend', handleTouches, { passive: false });
+		overlay.addEventListener('touchcancel', handleTouches, { passive: false });
+
+		// Mouse Drag Fallbacks
+		window.addEventListener('mousedown', (e) => {
+			if (isEditing && strikelineHitboxMode && e.target.closest('.touch-zone')) {
+				dragging = true;
+				dragStart = { x: e.clientX, y: e.clientY };
+				initialOffsets = JSON.parse(JSON.stringify(layoutSettings.offsets));
+			}
+		});
+
+		window.addEventListener('mousemove', (e) => {
+			if (isEditing && strikelineHitboxMode && dragging) {
+				const dx = e.clientX - dragStart.x;
+				const dy = e.clientY - dragStart.y;
+
+				if (editTarget === 'ALL') {
+					Object.keys(layoutSettings.offsets).forEach(key => {
+						layoutSettings.offsets[key].x = initialOffsets[key].x + dx;
+						layoutSettings.offsets[key].y = initialOffsets[key].y + dy;
+					});
+				} else {
+					layoutSettings.offsets[editTarget].x = initialOffsets[editTarget].x + dx;
+					layoutSettings.offsets[editTarget].y = initialOffsets[editTarget].y + dy;
+				}
+				applyOffsets();
+			}
+		});
+
+		window.addEventListener('mouseup', () => { dragging = false; });
+
+		// Mouse Fallbacks for Gameplay
+		zones.forEach(zone => {
+			const key = zone.getAttribute('data-key');
+			zone.addEventListener('mousedown', () => {
+				if (!arrowsVisible || isEditing) return;
+				zone.classList.add('active');
+				sendKeyEvent(key, 'keydown');
+			});
+			zone.addEventListener('mouseup', () => {
+				if (!arrowsVisible || isEditing) return;
+				zone.classList.remove('active');
+				sendKeyEvent(key, 'keyup');
+			});
+			zone.addEventListener('mouseleave', () => {
+				if (zone.classList.contains('active')) {
+					zone.classList.remove('active');
+					sendKeyEvent(key, 'keyup');
+				}
+			});
+		});
+
+		function attachHoldButton(btn, code) {
+			const press = (e) => {
+				e.preventDefault();
+				btn.classList.add('active');
+				sendKeyEvent(code, 'keydown');
+			};
+
+			const release = (e) => {
+				e.preventDefault();
+				btn.classList.remove('active');
+				sendKeyEvent(code, 'keyup');
+			};
+
+			btn.addEventListener('touchstart', press, { passive: false });
+			btn.addEventListener('touchend', release, { passive: false });
+			btn.addEventListener('touchcancel', release, { passive: false });
+			btn.addEventListener('mousedown', press);
+			btn.addEventListener('mouseup', release);
+			btn.addEventListener('mouseleave', release);
+		}
+
+		attachHoldButton(document.getElementById('quick-enter-btn'), 'Enter');
+		attachHoldButton(document.getElementById('quick-esc-btn'), 'Escape');
+		attachHoldButton(document.getElementById('quick-ctrl-btn'), 'ControlLeft');
+		attachHoldButton(document.getElementById('key-0-btn'), '0');
+		attachHoldButton(document.getElementById('key-minus-btn'), '-');
+		attachHoldButton(document.getElementById('key-plus-btn'), '+');
+		attachHoldButton(document.getElementById('key-7-btn'), '7');
+		attachHoldButton(document.getElementById('key-8-btn'), '8');
+
+		const topBar = document.getElementById('top-bar');
+		const toggleBtn = document.getElementById('toggle-ui-btn');
+		const editLayoutBtn = document.getElementById('edit-layout-btn');
+		const editorPanel = document.getElementById('editor-panel');
+
+		function toggleArrows() {
+			arrowsVisible = !arrowsVisible;
+			const hideBtn = document.getElementById('hide-arrows-btn');
+			
+			if (arrowsVisible) {
+				overlay.classList.remove('hidden-arrows');
+				hideBtn.innerText = 'HIDE ARROWS';
+			} else {
+				zones.forEach(zone => {
+					if (zone.classList.contains('active')) {
+						zone.classList.remove('active');
+						const key = zone.getAttribute('data-key');
+						sendKeyEvent(key, 'keyup');
+					}
+				});
+				overlay.classList.add('hidden-arrows');
+				hideBtn.innerText = 'SHOW ARROWS';
+			}
+		}
+
+		function toggleHitboxSize() {
+			strikelineHitboxMode = !strikelineHitboxMode;
+			const sizeBtn = document.getElementById('hitbox-size-btn');
+
+			if (strikelineHitboxMode) {
+				overlay.classList.add('strikeline-mode');
+				sizeBtn.innerText = 'HITBOX: NOTES';
+				editLayoutBtn.classList.remove('hidden-ui');
+				applyOffsets();
+			} else {
+				if (isEditing) toggleEditor();
+				overlay.classList.remove('strikeline-mode');
+				sizeBtn.innerText = 'HITBOX: FULL';
+				editLayoutBtn.classList.add('hidden-ui');
+				resetFullHitboxes();
+			}
+
+			try { localStorage.setItem('fnf_hitbox_mode', strikelineHitboxMode ? 'notes' : 'full'); } catch(e) {}
+		}
+
+		function toggleEditor() {
+			isEditing = !isEditing;
+			if (isEditing) {
+				editorPanel.classList.remove('hidden');
+				overlay.classList.add('editing');
+				editLayoutBtn.innerText = 'CLOSE EDIT';
+				setEditTarget(editTarget);
+			} else {
+				editorPanel.classList.add('hidden');
+				overlay.classList.remove('editing');
+				editLayoutBtn.innerText = 'EDIT LAYOUT';
+				zones.forEach(z => z.classList.remove('selected-target'));
+			}
+		}
+
+		function setEditTarget(target) {
+			editTarget = target;
+			const targetBtns = Array.from(document.querySelectorAll('.target-btn'));
+			targetBtns.forEach(btn => btn.classList.remove('selected'));
+
+			zones.forEach(z => z.classList.remove('selected-target'));
+
+			if (target === 'ALL') {
+				targetBtns[0].classList.add('selected');
+			} else {
+				const map = { 'ArrowLeft': 1, 'ArrowDown': 2, 'ArrowUp': 3, 'ArrowRight': 4 };
+				if (targetBtns[map[target]]) targetBtns[map[target]].classList.add('selected');
+				const targetZone = document.getElementById(`zone-${target}`);
+				if (targetZone) targetZone.classList.add('selected-target');
+			}
+		}
+
+		function saveHitboxSettings() {
+			localStorage.setItem('fnf_hitbox_layout', JSON.stringify(layoutSettings));
+			if (isEditing) toggleEditor();
+		}
+
+		function resetHitboxSettings() {
+			layoutSettings = {
+				offsets: {
+					'ArrowLeft': { x: 0, y: 0 },
+					'ArrowDown': { x: 0, y: 0 },
+					'ArrowUp': { x: 0, y: 0 },
+					'ArrowRight': { x: 0, y: 0 }
+				},
+				gap: 10,
+				height: 140,
+				width: 130
+			};
+			localStorage.removeItem('fnf_hitbox_layout');
+			document.getElementById('gap-slider').value = 10;
+			document.getElementById('height-slider').value = 140;
+			document.getElementById('width-slider').value = 130;
+			applyOffsets();
+		}
+
+		// Custom Programmable Button
+		let customButtonEnabled = false;
+		let customButtonEditingPosition = false;
+		let customDragging = false;
+		let customDragStart = { x: 0, y: 0 };
+		let customInitialOffset = { x: 0, y: 0 };
+		let customButtonSettings = { key: 'Space', height: 40, width: 80, x: 0, y: 0 };
+
+		function applyCustomButtonSizing() {
+			const btn = document.getElementById('custom-key-btn');
+			btn.style.height = customButtonSettings.height + 'px';
+			btn.style.width = customButtonSettings.width + 'px';
+			btn.style.transform = `translate(${customButtonSettings.x}px, ${customButtonSettings.y}px)`;
+			btn.innerText = customButtonSettings.key.toUpperCase();
+		}
+
+		function updateCustomButtonSizing() {
+			customButtonSettings.height = parseInt(document.getElementById('custom-height-slider').value);
+			customButtonSettings.width = parseInt(document.getElementById('custom-width-slider').value);
+			applyCustomButtonSizing();
+		}
+
+		function updateCustomButtonKey() {
+			customButtonSettings.key = document.getElementById('custom-key-select').value;
+			applyCustomButtonSizing();
+		}
+
+		function toggleCustomButtonFeature() {
+			customButtonEnabled = !customButtonEnabled;
+			const toggleBtnEl = document.getElementById('add-custom-btn-toggle');
+			const keyBtn = document.getElementById('custom-key-btn');
+			const editorEl = document.getElementById('custom-btn-editor');
+
+			if (customButtonEnabled) {
+				keyBtn.classList.remove('hidden');
+				editorEl.classList.remove('hidden');
+				toggleBtnEl.innerText = 'Remove Button';
+				applyCustomButtonSizing();
+			} else {
+				keyBtn.classList.add('hidden');
+				editorEl.classList.add('hidden');
+				toggleBtnEl.innerText = 'Add Button';
+				// Exiting the feature always locks position editing back off
+				customButtonEditingPosition = false;
+				document.getElementById('custom-move-toggle').innerText = 'MOVE';
+				document.getElementById('custom-move-toggle').classList.remove('selected');
+				keyBtn.classList.remove('move-mode');
+			}
+		}
+
+		// Select/deselect the button for repositioning: tap MOVE to pick it up
+		// and start dragging it, tap the same button (now labeled LOCK) to drop it.
+		function toggleCustomButtonMove() {
+			customButtonEditingPosition = !customButtonEditingPosition;
+			const moveBtn = document.getElementById('custom-move-toggle');
+			const keyBtn = document.getElementById('custom-key-btn');
+
+			if (customButtonEditingPosition) {
+				moveBtn.innerText = 'LOCK';
+				moveBtn.classList.add('selected');
+				keyBtn.classList.add('move-mode');
+			} else {
+				moveBtn.innerText = 'MOVE';
+				moveBtn.classList.remove('selected');
+				keyBtn.classList.remove('move-mode');
+				customDragging = false;
+			}
+		}
+
+		function saveCustomButtonSettings() {
+			try { localStorage.setItem('fnf_custom_button', JSON.stringify(customButtonSettings)); } catch(e) {}
+			document.getElementById('custom-btn-editor').classList.add('hidden');
+		}
+
+		function resetCustomButtonSettings() {
+			customButtonSettings = { key: 'Space', height: 40, width: 80, x: 0, y: 0 };
+			try { localStorage.removeItem('fnf_custom_button'); } catch(e) {}
+			document.getElementById('custom-key-select').value = 'Space';
+			document.getElementById('custom-height-slider').value = 40;
+			document.getElementById('custom-width-slider').value = 80;
+			applyCustomButtonSizing();
+		}
+
+		function loadSavedCustomButton() {
+			let saved = null;
+			try { saved = localStorage.getItem('fnf_custom_button'); } catch(e) {}
+			if (saved) {
+				try {
+					const parsed = JSON.parse(saved);
+					customButtonSettings = Object.assign({ x: 0, y: 0 }, parsed);
+				} catch(e) {}
+			}
+			document.getElementById('custom-key-select').value = customButtonSettings.key;
+			document.getElementById('custom-height-slider').value = customButtonSettings.height;
+			document.getElementById('custom-width-slider').value = customButtonSettings.width;
+			applyCustomButtonSizing();
+		}
+
+		function customKeyPress(e) {
+			e.preventDefault();
+			document.getElementById('custom-key-btn').classList.add('active');
+			sendKeyEvent(customButtonSettings.key, 'keydown');
+		}
+
+		function customKeyRelease(e) {
+			e.preventDefault();
+			document.getElementById('custom-key-btn').classList.remove('active');
+			sendKeyEvent(customButtonSettings.key, 'keyup');
+		}
+
+		function getPointer(e) {
+			return e.touches && e.touches.length ? e.touches[0] : e;
+		}
+
+		function customButtonPointerDown(e) {
+			if (customButtonEditingPosition) {
+				e.preventDefault();
+				customDragging = true;
+				const point = getPointer(e);
+				customDragStart = { x: point.clientX, y: point.clientY };
+				customInitialOffset = { x: customButtonSettings.x, y: customButtonSettings.y };
+			} else {
+				customKeyPress(e);
+			}
+		}
+
+		function customButtonPointerMove(e) {
+			if (customButtonEditingPosition && customDragging) {
+				e.preventDefault();
+				const point = getPointer(e);
+				const dx = point.clientX - customDragStart.x;
+				const dy = point.clientY - customDragStart.y;
+				customButtonSettings.x = customInitialOffset.x + dx;
+				customButtonSettings.y = customInitialOffset.y + dy;
+				applyCustomButtonSizing();
+			}
+		}
+
+		function customButtonPointerUp(e) {
+			if (customButtonEditingPosition) {
+				customDragging = false;
+			} else {
+				customKeyRelease(e);
+			}
+		}
+
+		(function attachCustomKeyButton() {
+			const btn = document.getElementById('custom-key-btn');
+			btn.addEventListener('touchstart', customButtonPointerDown, { passive: false });
+			btn.addEventListener('touchmove', customButtonPointerMove, { passive: false });
+			btn.addEventListener('touchend', customButtonPointerUp, { passive: false });
+			btn.addEventListener('touchcancel', customButtonPointerUp, { passive: false });
+			btn.addEventListener('mousedown', customButtonPointerDown);
+			window.addEventListener('mousemove', customButtonPointerMove);
+			window.addEventListener('mouseup', customButtonPointerUp);
+			btn.addEventListener('mouseleave', (e) => {
+				if (!customButtonEditingPosition) customKeyRelease(e);
+			});
+		})();
+
+		function isInFullscreen() {
+			return !!(document.fullscreenElement || document.webkitFullscreenElement);
+		}
+
+		function updateUIState() {
+			const isFullscreen = isInFullscreen();
+
+			if (isFullscreen) {
+				toggleBtn.classList.remove('hidden-ui');
+				if (menuVisibleInFullscreen) {
+					topBar.classList.remove('hidden-ui');
+				} else {
+					topBar.classList.add('hidden-ui');
+				}
+			} else {
+				toggleBtn.classList.add('hidden-ui');
+				topBar.classList.remove('hidden-ui');
+				menuVisibleInFullscreen = false;
+			}
+
+			updateFullscreenGate();
+		}
+
+		function toggleTopMenu() {
+			menuVisibleInFullscreen = !menuVisibleInFullscreen;
+			updateUIState();
+		}
+
+		function toggleFullscreen() {
+			const elem = document.documentElement;
+			if (!isInFullscreen()) {
+				// Hide the top bar the instant fullscreen is requested, instead of
+				// waiting on the browser's fullscreenchange event (which can lag).
+				menuVisibleInFullscreen = false;
+				topBar.classList.add('hidden-ui');
+				toggleBtn.classList.remove('hidden-ui');
+
+				if (elem.requestFullscreen) {
+					elem.requestFullscreen();
+				} else if (elem.webkitRequestFullscreen) {
+					elem.webkitRequestFullscreen();
+				}
+			} else {
+				if (document.exitFullscreen) {
+					document.exitFullscreen();
+				} else if (document.webkitExitFullscreen) {
+					document.webkitExitFullscreen();
+				}
+			}
+		}
+
+		// Fullscreen Gate: on Mobile, block play behind a blurred overlay until fullscreen is entered.
+		// Disappears the instant fullscreen is actually active (checked on every UI state update).
+		function updateFullscreenGate() {
+			const gate = document.getElementById('fullscreen-gate');
+			if (deviceMode === 'mobile' && !isInFullscreen()) {
+				gate.classList.remove('hidden');
+			} else {
+				gate.classList.add('hidden');
+			}
+		}
+
+
+		document.addEventListener('fullscreenchange', updateUIState);
+		document.addEventListener('webkitfullscreenchange', updateUIState);
+
+		window.addEventListener('touchstart', function() {
+			window.focus();
+		});
+
+		// Device Selection: Desktop shows no controls at all, Mobile shows the custom touch controls
+		// Asked fresh every time the page opens (no persistence).
+		function chooseDevice(mode) {
+			deviceMode = mode;
+			document.getElementById('device-select').classList.add('hidden');
+
+			if (mode === 'mobile') {
+				document.getElementById('mobile-controls-wrap').style.display = '';
+			}
+			// Desktop: mobile-controls-wrap stays display:none (its default), so nothing renders.
+			updateFullscreenGate();
+		}
+
+		// Remember whether the user was using FULL (columns) or NOTES (movable) hitbox mode
+		function loadSavedHitboxMode() {
+			let savedMode = null;
+			try { savedMode = localStorage.getItem('fnf_hitbox_mode'); } catch(e) {}
+			if (savedMode === 'notes' && !strikelineHitboxMode) {
+				toggleHitboxSize();
+			}
+		}
+
+		loadSavedOffsets();
+		loadSavedHitboxMode();
+		loadSavedCustomButton();
+	</script>
+</body>
+</html>
